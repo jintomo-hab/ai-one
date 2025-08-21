@@ -1,79 +1,420 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>シンプル塗り絵ゲーム</title>
-<style>
-  body {
-    font-family: sans-serif;
-    text-align: center;
-    background-color: #f5f5f5;
-  }
-  h1 {
-    margin-top: 20px;
-  }
-  .palette {
-    margin: 20px;
-  }
-  .color {
-    display: inline-block;
-    width: 30px;
-    height: 30px;
-    margin: 5px;
-    border: 2px solid #ccc;
-    cursor: pointer;
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(10, 30px);
-    grid-template-rows: repeat(10, 30px);
-    gap: 1px;
-    justify-content: center;
-    margin: 0 auto;
-    background-color: #ccc;
-    padding: 5px;
-  }
-  .cell {
-    width: 30px;
-    height: 30px;
-    background-color: white;
-    cursor: pointer;
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐾 動物スイカゲーム 🐾</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .game-container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            margin: 0 0 20px 0;
+            color: #4a4a4a;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
+        .score {
+            color: #ff6b6b;
+        }
+        
+        .next-animal {
+            color: #4ecdc4;
+        }
+        
+        #gameCanvas {
+            border: 3px solid #4a4a4a;
+            border-radius: 10px;
+            background: linear-gradient(180deg, #e3f2fd 0%, #bbdefb 100%);
+            cursor: crosshair;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .evolution-chain {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            font-size: 1.5em;
+            line-height: 2;
+        }
+        
+        .controls {
+            margin-top: 20px;
+        }
+        
+        .reset-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1.1em;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+        
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+        
+        .reset-btn:active {
+            transform: translateY(0);
+        }
+        
+        .instructions {
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 59, 59, 0.95);
+            color: white;
+            padding: 30px 50px;
+            border-radius: 15px;
+            font-size: 2em;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: pulse 2s infinite;
+            z-index: 1000;
+        }
+        
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-  <h1>シンプル塗り絵ゲーム</h1>
-  <div class="palette" id="palette"></div>
-  <div class="grid" id="grid"></div>
+    <div class="game-container">
+        <h1>🐾 動物スイカゲーム 🐾</h1>
+        
+        <div class="game-info">
+            <div class="score">スコア: <span id="score">0</span></div>
+            <div class="next-animal">次の動物: <span id="nextAnimal">🐭</span></div>
+        </div>
+        
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+        
+        <div class="evolution-chain">
+            🐭→🐹→🐱→🐶→🐺→🦊→🐻→🦁→🐘→🦕
+        </div>
+        
+        <div class="controls">
+            <button class="reset-btn" onclick="resetGame()">🔄 リセット</button>
+        </div>
+        
+        <div class="instructions">
+            マウスで位置を決めてクリックで動物を落とそう！<br>
+            同じ動物同士がぶつかると進化するよ！
+        </div>
+        
+        <div id="gameOverMessage" class="game-over hidden">
+            ゲームオーバー！<br>
+            <div style="font-size: 0.6em; margin-top: 10px;">リセットボタンでもう一度！</div>
+        </div>
+    </div>
 
-<script>
-  // 色のリスト
-  const colors = ["red", "orange", "yellow", "green", "blue", "purple", "pink", "brown", "black", "white"];
-  let currentColor = "black";
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const nextAnimalElement = document.getElementById('nextAnimal');
+        const gameOverElement = document.getElementById('gameOverMessage');
 
-  // パレット作成
-  const palette = document.getElementById("palette");
-  colors.forEach(color => {
-    const div = document.createElement("div");
-    div.className = "color";
-    div.style.backgroundColor = color;
-    div.addEventListener("click", () => {
-      currentColor = color;
-    });
-    palette.appendChild(div);
-  });
+        // ゲーム設定
+        const GRAVITY = 0.4;
+        const BOUNCE = 0.4;
+        const FRICTION = 0.95;
+        const DROP_LINE = 80;
+        const DANGER_LINE = 100;
+        const DROP_COOLDOWN = 500;
 
-  // グリッド作成
-  const grid = document.getElementById("grid");
-  for (let i = 0; i < 100; i++) {
-    const cell = document.createElement("div");
-    cell.className = "cell";
-    cell.addEventListener("click", () => {
-      cell.style.backgroundColor = currentColor;
-    });
-    grid.appendChild(cell);
-  }
-</script>
+        // 動物データ
+        const ANIMALS = [
+            { emoji: '🐭', radius: 18, points: 1 },
+            { emoji: '🐹', radius: 24, points: 2 },
+            { emoji: '🐱', radius: 30, points: 5 },
+            { emoji: '🐶', radius: 36, points: 10 },
+            { emoji: '🐺', radius: 42, points: 20 },
+            { emoji: '🦊', radius: 48, points: 50 },
+            { emoji: '🐻', radius: 54, points: 100 },
+            { emoji: '🦁', radius: 60, points: 200 },
+            { emoji: '🐘', radius: 66, points: 500 },
+            { emoji: '🦕', radius: 72, points: 1000 }
+        ];
+
+        // ゲーム状態
+        let animals = [];
+        let score = 0;
+        let gameOver = false;
+        let nextType = 0;
+        let mouseX = canvas.width / 2;
+        let canDrop = true;
+        let lastDropTime = 0;
+
+        class Animal {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.vx = 0;
+                this.vy = 0;
+                this.radius = ANIMALS[type].radius;
+                this.landed = false;
+                this.merged = false;
+            }
+
+            update() {
+                if (this.merged) return;
+
+                // 重力適用
+                this.vy += GRAVITY;
+                
+                // 位置更新
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // 壁との衝突
+                if (this.x - this.radius < 0) {
+                    this.x = this.radius;
+                    this.vx = -this.vx * BOUNCE;
+                }
+                if (this.x + this.radius > canvas.width) {
+                    this.x = canvas.width - this.radius;
+                    this.vx = -this.vx * BOUNCE;
+                }
+
+                // 床との衝突
+                if (this.y + this.radius > canvas.height) {
+                    this.y = canvas.height - this.radius;
+                    this.vy = -this.vy * BOUNCE;
+                    this.landed = true;
+                }
+
+                // 摩擦適用
+                this.vx *= FRICTION;
+                this.vy *= FRICTION;
+            }
+
+            draw() {
+                if (this.merged) return;
+
+                // 影を描画
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                ctx.beginPath();
+                ctx.ellipse(this.x, this.y + this.radius + 5, this.radius * 0.8, this.radius * 0.3, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 動物を描画
+                ctx.font = `${this.radius * 1.5}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(ANIMALS[this.type].emoji, this.x, this.y);
+            }
+        }
+
+        function generateNextType() {
+            // 最初の5種類からランダムに選択
+            return Math.floor(Math.random() * 5);
+        }
+
+        function handleCollisions() {
+            for (let i = 0; i < animals.length; i++) {
+                for (let j = i + 1; j < animals.length; j++) {
+                    const animal1 = animals[i];
+                    const animal2 = animals[j];
+                    
+                    if (animal1.merged || animal2.merged) continue;
+                    if (animal1.type !== animal2.type) continue;
+                    
+                    const dx = animal1.x - animal2.x;
+                    const dy = animal1.y - animal2.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < animal1.radius + animal2.radius) {
+                        // 合体処理
+                        if (animal1.type < ANIMALS.length - 1) {
+                            const newX = (animal1.x + animal2.x) / 2;
+                            const newY = (animal1.y + animal2.y) / 2;
+                            const newType = animal1.type + 1;
+                            
+                            // 新しい動物を作成
+                            const newAnimal = new Animal(newX, newY, newType);
+                            newAnimal.vy = -3; // 少し跳ねる
+                            animals.push(newAnimal);
+                            
+                            // スコア加算
+                            score += ANIMALS[newType].points;
+                            scoreElement.textContent = score;
+                        }
+                        
+                        // 古い動物を削除
+                        animal1.merged = true;
+                        animal2.merged = true;
+                    }
+                }
+            }
+            
+            // マージされた動物を配列から削除
+            animals = animals.filter(animal => !animal.merged);
+        }
+
+        function checkGameOver() {
+            for (const animal of animals) {
+                if (animal.y - animal.radius < DANGER_LINE && 
+                    Math.abs(animal.vx) < 1 && Math.abs(animal.vy) < 1 && 
+                    animal.landed) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function drawDangerLine() {
+            ctx.strokeStyle = '#ff4444';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 5]);
+            ctx.beginPath();
+            ctx.moveTo(0, DANGER_LINE);
+            ctx.lineTo(canvas.width, DANGER_LINE);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function drawNextAnimalPreview() {
+            if (gameOver || !canDrop) return;
+            
+            ctx.globalAlpha = 0.5;
+            ctx.font = `${ANIMALS[nextType].radius * 1.5}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(ANIMALS[nextType].emoji, mouseX, DROP_LINE);
+            ctx.globalAlpha = 1;
+        }
+
+        function gameLoop() {
+            // 画面クリア
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (!gameOver) {
+                // デンジャーライン描画
+                drawDangerLine();
+                
+                // 次の動物プレビュー
+                drawNextAnimalPreview();
+                
+                // 動物更新・描画
+                animals.forEach(animal => {
+                    animal.update();
+                    animal.draw();
+                });
+                
+                // 衝突判定
+                handleCollisions();
+                
+                // ゲームオーバー判定
+                if (checkGameOver()) {
+                    gameOver = true;
+                    gameOverElement.classList.remove('hidden');
+                }
+                
+                // ドロップクールダウン
+                if (!canDrop && Date.now() - lastDropTime > DROP_COOLDOWN) {
+                    canDrop = true;
+                }
+            } else {
+                // ゲームオーバー時も動物は描画
+                animals.forEach(animal => animal.draw());
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        function dropAnimal() {
+            if (!canDrop || gameOver) return;
+            
+            const animal = new Animal(mouseX, DROP_LINE, nextType);
+            animals.push(animal);
+            
+            nextType = generateNextType();
+            nextAnimalElement.textContent = ANIMALS[nextType].emoji;
+            
+            canDrop = false;
+            lastDropTime = Date.now();
+        }
+
+        function resetGame() {
+            animals = [];
+            score = 0;
+            gameOver = false;
+            nextType = generateNextType();
+            canDrop = true;
+            
+            scoreElement.textContent = score;
+            nextAnimalElement.textContent = ANIMALS[nextType].emoji;
+            gameOverElement.classList.add('hidden');
+        }
+
+        // イベントリスナー
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            
+            // 境界チェック
+            const radius = ANIMALS[nextType].radius;
+            if (mouseX < radius) mouseX = radius;
+            if (mouseX > canvas.width - radius) mouseX = canvas.width - radius;
+        });
+
+        canvas.addEventListener('click', dropAnimal);
+
+        // ゲーム初期化
+        nextType = generateNextType();
+        nextAnimalElement.textContent = ANIMALS[nextType].emoji;
+        gameLoop();
+    </script>
 </body>
 </html>
